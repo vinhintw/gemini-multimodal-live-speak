@@ -1,6 +1,6 @@
-import { Message } from "@/components/gemini-chat";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Message } from "./setup-model";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

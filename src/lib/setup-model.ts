@@ -1,5 +1,15 @@
 import { FunctionDeclaration } from "@google/generative-ai";
 
+export interface Message {
+  id: string;
+  type: "user" | "assistant" | "function" | "error";
+  content: string;
+  timestamp: Date;
+  functionName?: string;
+  functionParams?: Record<string, any>;
+  apiResponse?: any;
+}
+
 interface SetupModelParams {
   model?: string;
   system_instruction?: string;
