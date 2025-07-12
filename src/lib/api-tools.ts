@@ -43,8 +43,8 @@ export function sendObstacleAlert(params: ObstacleAlert): void {
   console.log("-------------------");
 }
 
-// đọc nội dung văn bản
-export function readTextContent(params: TextContent): void {
+// gửi nội dung văn bản
+export function sendTextContent(params: TextContent): void {
   console.log("📖 TEXT CONTENT:");
   console.log(`Text Type: ${params.text_type}`);
   console.log(`Location: ${params.location}`);

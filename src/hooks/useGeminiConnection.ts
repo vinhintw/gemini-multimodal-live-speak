@@ -11,7 +11,7 @@ import {
 import {
   sendObstacleAlert,
   sendEnvironmentInfo,
-  readTextContent,
+  sendTextContent,
   sendNavigationGuidance,
 } from "@/lib/api-tools";
 
@@ -145,8 +145,8 @@ export const useGeminiConnection = () => {
                 },
               },
             });
-          } else if (call.name === "read_text_content") {
-            readTextContent(call.args);
+          } else if (call.name === "send_text_content") {
+            sendTextContent(call.args);
             addMessage({
               type: "function",
               content: `📖 文字內容: "${call.args.text_content}" (${call.args.text_type})`,
