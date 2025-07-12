@@ -17,7 +17,6 @@ export interface GeminiSetupConfig {
     };
   };
 }
-
 export interface ToolCall {
   functionCalls: Array<{
     id: string;
@@ -45,18 +44,22 @@ export class GeminiLiveAPI {
   public onError: (message: string) => void = () => {};
   public onClose: (event: CloseEvent) => void = () => {};
   public onToolCall: (toolCall: ToolCall) => void = () => {};
-  
+
   private pendingSetupMessage: any = null;
   private autoSetup: boolean;
   private setupConfig: GeminiSetupConfig | null;
-  
+
   // Enhanced Audio playback properties
   private audioContext: AudioContext | null = null;
   private audioQueue: Float32Array[] = [];
   private currentSource: AudioBufferSourceNode | null = null;
   private isPlaying: boolean = false;
 
-  constructor(endpoint: string, autoSetup = true, setupConfig: GeminiSetupConfig | null = null) {
+  constructor(
+    endpoint: string,
+    autoSetup = true,
+    setupConfig: GeminiSetupConfig | null = null
+  ) {
     this.ws = new WebSocket(endpoint);
     this.autoSetup = autoSetup;
     this.setupConfig = setupConfig;
@@ -65,11 +68,11 @@ export class GeminiLiveAPI {
 
   private setupWebSocket(): void {
     this.ws.onopen = () => {
-      console.log('WebSocket connection is opening...');
+      console.log("WebSocket connection is opening...");
       if (this.autoSetup) {
         this.sendDefaultSetup();
       } else if (this.pendingSetupMessage) {
-        console.log('Sending pending setup message:', this.pendingSetupMessage);
+        console.log("Sending pending setup message:", this.pendingSetupMessage);
         this.ws.send(JSON.stringify(this.pendingSetupMessage));
         this.pendingSetupMessage = null;
       }
@@ -88,66 +91,72 @@ export class GeminiLiveAPI {
         if (wsResponse.setupComplete) {
           this.onSetupComplete();
         } else if (wsResponse.toolCall) {
-          console.log('🔧 Tool call received:', wsResponse.toolCall);
+          console.log("🔧 Tool call received:", wsResponse.toolCall);
           this.onToolCall(wsResponse.toolCall);
         } else if (wsResponse.serverContent) {
           if (wsResponse.serverContent.interrupted) {
-            console.log('⛔ Interruption received');
+            console.log("⛔ Interruption received");
             this.onInterrupted();
             return;
           }
 
           if (wsResponse.serverContent.turnComplete) {
-            console.log('✅ Turn complete received');
+            console.log("✅ Turn complete received");
             this.onTurnComplete();
             return;
           }
 
-          if (wsResponse.serverContent.modelTurn && 
-              wsResponse.serverContent.modelTurn.parts) {
-            
+          if (
+            wsResponse.serverContent.modelTurn &&
+            wsResponse.serverContent.modelTurn.parts
+          ) {
             for (const part of wsResponse.serverContent.modelTurn.parts) {
-              
-              if (part.inlineData && part.inlineData.mimeType && 
-                  part.inlineData.mimeType.startsWith('audio/pcm')) {
+              if (
+                part.inlineData &&
+                part.inlineData.mimeType &&
+                part.inlineData.mimeType.startsWith("audio/pcm")
+              ) {
                 this.onAudioData(part.inlineData.data);
                 // Enhanced audio playback
                 this.playAudioResponse(part.inlineData.data);
               } else if (part.text) {
-                console.log('📝 Text part:', part.text);
+                console.log("📝 Text part:", part.text);
               } else {
-                console.log('❓ Unknown part type:', part);
+                console.log("❓ Unknown part type:", part);
               }
             }
           } else {
-            console.log('❌ Server content without modelTurn.parts:', wsResponse.serverContent);
+            console.log(
+              "❌ Server content without modelTurn.parts:",
+              wsResponse.serverContent
+            );
           }
         } else {
-          console.log('❓ Unknown message type:', wsResponse);
+          console.log("❓ Unknown message type:", wsResponse);
         }
       } catch (error) {
-        console.error('❌ Error processing WebSocket message:', error);
-        this.onError('Error processing message: ' + (error as Error).message);
+        console.error("❌ Error processing WebSocket message:", error);
+        this.onError("Error processing message: " + (error as Error).message);
       }
     };
 
     this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      this.onError('WebSocket error occurred');
+      console.error("WebSocket error:", error);
+      this.onError("WebSocket error occurred");
     };
 
     this.ws.onclose = (event) => {
-      console.log('WebSocket connection closed:', event.code, event.reason);
+      console.log("WebSocket connection closed:", event.code, event.reason);
       this.onClose(event);
     };
   }
 
   public sendSetupMessage(setupMessage: any): void {
     if (this.ws.readyState === WebSocket.OPEN) {
-      console.log('Sending setup message:', setupMessage);
+      console.log("Sending setup message:", setupMessage);
       this.ws.send(JSON.stringify(setupMessage));
     } else {
-      console.log('WebSocket not ready, storing setup message');
+      console.log("WebSocket not ready, storing setup message");
       this.pendingSetupMessage = setupMessage;
     }
   }
@@ -156,8 +165,8 @@ export class GeminiLiveAPI {
     const defaultSetup = this.setupConfig || {
       model: "models/gemini-2.0-flash-exp",
       generation_config: {
-        response_modalities: ["audio"]
-      }
+        response_modalities: ["audio"],
+      },
     };
 
     this.sendSetupMessage({ setup: defaultSetup });
@@ -167,15 +176,20 @@ export class GeminiLiveAPI {
     if (this.ws.readyState === WebSocket.OPEN) {
       const message = {
         realtimeInput: {
-          mediaChunks: [{
-            mimeType: "audio/pcm",
-            data: base64Data
-          }]
-        }
+          mediaChunks: [
+            {
+              mimeType: "audio/pcm",
+              data: base64Data,
+            },
+          ],
+        },
       };
       this.ws.send(JSON.stringify(message));
     } else {
-      console.error('❌ WebSocket not open, cannot send audio chunk. State:', this.ws.readyState);
+      console.error(
+        "❌ WebSocket not open, cannot send audio chunk. State:",
+        this.ws.readyState
+      );
     }
   }
 
@@ -183,8 +197,8 @@ export class GeminiLiveAPI {
     if (this.ws.readyState === WebSocket.OPEN) {
       const endMessage = {
         realtimeInput: {
-          mediaChunks: []
-        }
+          mediaChunks: [],
+        },
       };
       this.ws.send(JSON.stringify(endMessage));
     }
@@ -194,10 +208,10 @@ export class GeminiLiveAPI {
     if (this.ws.readyState === WebSocket.OPEN) {
       const message = {
         toolResponse: {
-          functionResponses: functionResponses
-        }
+          functionResponses: functionResponses,
+        },
       };
-      console.log('Sending tool response:', message);
+      console.log("Sending tool response:", message);
       this.ws.send(JSON.stringify(message));
     }
   }
@@ -206,7 +220,7 @@ export class GeminiLiveAPI {
     if (this.ws.readyState === WebSocket.OPEN) {
       this.ws.close();
     }
-    
+
     // Stop audio playback
     this.stopAudioPlayback();
   }
@@ -217,8 +231,8 @@ export class GeminiLiveAPI {
       this.audioContext = new AudioContext({
         sampleRate: 24000,
       });
-      
-      if (this.audioContext.state === 'suspended') {
+
+      if (this.audioContext.state === "suspended") {
         await this.audioContext.resume();
       }
     }
@@ -229,14 +243,14 @@ export class GeminiLiveAPI {
     if (!this.audioContext) {
       await this.initializeAudioContext();
     }
-    
+
     this.playNextInQueue();
   }
 
   // Enhanced audio response processing with level detection
   public playAudioResponse(base64Data: string): void {
     if (!this.audioContext) {
-      console.error('Audio context not initialized');
+      console.error("Audio context not initialized");
       return;
     }
 
@@ -257,29 +271,25 @@ export class GeminiLiveAPI {
 
       // Add to queue
       this.audioQueue.push(float32Data);
-      
+
       // Start playing only if not currently playing
       if (!this.isPlaying) {
         this.playNextInQueue();
       }
     } catch (error) {
-      console.error('Error processing audio response:', error);
+      console.error("Error processing audio response:", error);
     }
   }
 
   // Enhanced queue processing with audio level monitoring
   private async playNextInQueue(): Promise<void> {
-    if (
-      !this.audioContext ||
-      this.audioQueue.length === 0 ||
-      this.isPlaying
-    ) {
+    if (!this.audioContext || this.audioQueue.length === 0 || this.isPlaying) {
       return;
     }
 
     try {
       this.isPlaying = true;
-      
+
       const float32Data = this.audioQueue.shift()!;
 
       // Create audio buffer
@@ -298,14 +308,14 @@ export class GeminiLiveAPI {
       this.currentSource.onended = () => {
         this.currentSource = null;
         this.isPlaying = false;
-        
+
         // Continue playing next in queue
         this.playNextInQueue();
       };
 
       this.currentSource.start();
     } catch (error) {
-      console.error('[WebSocket] Error playing audio:', error);
+      console.error("[WebSocket] Error playing audio:", error);
       this.currentSource = null;
       this.isPlaying = false;
       this.playNextInQueue();
@@ -314,7 +324,6 @@ export class GeminiLiveAPI {
 
   // Enhanced audio stopping with proper cleanup
   public async stopAudioPlayback(): Promise<void> {
-    
     // Stop current playing audio
     if (this.currentSource) {
       try {
@@ -335,8 +344,8 @@ export class GeminiLiveAPI {
       await this.audioContext.close();
       this.audioContext = null;
     }
-    
-    console.log('🎵 Audio playback stopped and cleaned up');
+
+    console.log("🎵 Audio playback stopped and cleaned up");
   }
 
   // Stop only current audio but keep context for future playback
@@ -364,11 +373,15 @@ export class GeminiLiveAPI {
   }
 
   // Get current audio playback status
-  public getAudioStatus(): { isPlaying: boolean; queueLength: number; hasContext: boolean } {
+  public getAudioStatus(): {
+    isPlaying: boolean;
+    queueLength: number;
+    hasContext: boolean;
+  } {
     return {
       isPlaying: this.isPlaying,
       queueLength: this.audioQueue.length,
-      hasContext: !!this.audioContext
+      hasContext: !!this.audioContext,
     };
   }
 
@@ -376,19 +389,23 @@ export class GeminiLiveAPI {
     if (this.ws.readyState === WebSocket.OPEN) {
       const contentMessage = {
         client_content: {
-          turns: [{
-            role: "user",
-            parts: [{ text: message }]
-          }],
-          turn_complete: true
-        }
+          turns: [
+            {
+              role: "user",
+              parts: [{ text: message }],
+            },
+          ],
+          turn_complete: true,
+        },
       };
 
-      console.log('Sending content message:', contentMessage);
+      console.log("Sending content message:", contentMessage);
       this.ws.send(JSON.stringify(contentMessage));
     } else {
-      console.error('❌ WebSocket not open, cannot send text message. State:', this.ws.readyState);
+      console.error(
+        "❌ WebSocket not open, cannot send text message. State:",
+        this.ws.readyState
+      );
     }
   }
-
 }
