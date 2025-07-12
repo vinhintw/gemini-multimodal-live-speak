@@ -5,15 +5,10 @@ import { MediaHandler } from "@/lib/media-handler";
 import { Message, setupModel } from "@/lib/setup-model";
 import { endpoint, GEMINI_API_KEY } from "@/lib/ai-config";
 import {
-  cameraWalkingPrompt,
+  navigationAssistantPrompt,
   walkingFunctionDeclarations,
 } from "@/lib/aiprompt";
-import {
-  sendObstacleAlert,
-  sendEnvironmentInfo,
-  sendTextContent,
-  sendNavigationGuidance,
-} from "@/lib/api-tools";
+import { sendObstacleAlert, sendNavigationGuidance } from "@/lib/api-tools";
 
 export const useGeminiConnection = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -125,41 +120,6 @@ export const useGeminiConnection = () => {
                 },
               },
             });
-          } else if (call.name === "send_environment_info") {
-            sendEnvironmentInfo(call.args);
-            addMessage({
-              type: "function",
-              content: `🌍 環境資訊: ${call.args.environment_type} - ${call.args.description}`,
-              functionName: call.name,
-              functionParams: call.args,
-            });
-            functionResponses.push({
-              id: call.id,
-              name: call.name,
-              response: {
-                result: {
-                  object_value: {
-                    status: "environment_info_sent",
-                    ...call.args,
-                  },
-                },
-              },
-            });
-          } else if (call.name === "send_text_content") {
-            sendTextContent(call.args);
-            addMessage({
-              type: "function",
-              content: `📖 文字內容: "${call.args.text_content}" (${call.args.text_type})`,
-              functionName: call.name,
-              functionParams: call.args,
-            });
-            functionResponses.push({
-              id: call.id,
-              name: call.name,
-              response: {
-                result: { object_value: { status: "text_read", ...call.args } },
-              },
-            });
           } else if (call.name === "send_navigation_guidance") {
             sendNavigationGuidance(call.args);
             addMessage({
@@ -210,7 +170,7 @@ export const useGeminiConnection = () => {
 
         const setupMessage = setupModel({
           voice_name: "Puck",
-          system_instruction: cameraWalkingPrompt,
+          system_instruction: navigationAssistantPrompt,
           functionDeclarations: walkingFunctionDeclarations,
         });
 
