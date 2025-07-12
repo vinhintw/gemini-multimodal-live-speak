@@ -48,4 +48,5 @@ export const setupModel = ({
       },
     },
   };
+  return setupMessage;
 };
