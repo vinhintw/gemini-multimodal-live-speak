@@ -31,17 +31,24 @@ export const navigationAssistantPrompt = `
 **警示等級：**
 - "critical"（0-2公尺）：立即停止
 - "high"（2-5公尺）：小心注意，準備避開
-- "medium"（5公尺以上）：留意觀察，持續監控
 
 ### **2. 導航指引（自動）**
 偵測到以下情況時自動使用 send_navigation_guidance：
 
 - **障礙物避開：** "前方有停車，請向右移動"
 - **方向改變：** "人行道結束了，右轉走上新的人行道"
+- **前方有轉彎：** "前方有轉彎，請準備左/右轉"
 - **發現前方是牆壁或著已到達角落：** "走到角落需要轉彎"
 - **安全導航：** "前方施工中，請走左邊的路徑"
 
 ## **操作原則：**
+- 每次使用 send_navigation_guidance 時，請務必提供明確方向（左轉、右轉、直走等）
+- direction 欄位的值請選擇以下其中之一：
+  - "左轉"
+  - "右轉"
+  - "直走"
+  - "稍微左轉"
+  - "稍微右轉"
 
 ### **自動且主動：**
 - 每次收到新影像時務必自動檢查障礙物
@@ -74,7 +81,7 @@ export const navigationAssistantPrompt = `
 // Function declaration types
 export const sendObstacleAlertDeclaration: FunctionDeclaration = {
   name: "send_obstacle_alert",
-  description: "Send obstacle alert to help user avoid obstacles",
+  description: "Send obstacle alert to the application",
   parameters: {
     type: SchemaType.OBJECT,
     properties: {
@@ -116,7 +123,7 @@ export const sendObstacleAlertDeclaration: FunctionDeclaration = {
 
 export const sendNavigationGuidanceDeclaration: FunctionDeclaration = {
   name: "send_navigation_guidance",
-  description: "Send navigation guidance to to help user navigate",
+  description: "Send navigation guidance to the application",
   parameters: {
     type: SchemaType.OBJECT,
     properties: {
