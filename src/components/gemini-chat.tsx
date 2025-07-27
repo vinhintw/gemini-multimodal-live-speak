@@ -6,13 +6,11 @@ import { useMessages } from "@/hooks/useMessages";
 import { useCameraPermissions } from "@/hooks/useCameraPermissions";
 import { ConnectionHeader } from "@/components/ConnectionHeader";
 import { VideoPreview } from "@/components/VideoPreview";
-import { MessagesPanel } from "@/components/MessagesPanel";
 
 export default function GeminiChat() {
   const videoRef = useRef<HTMLVideoElement>(
     null
   ) as React.RefObject<HTMLVideoElement>;
-  const [autoSendAudioData, setAutoSendAudioData] = useState("");
   const [isAutoSending, setIsAutoSending] = useState(false);
   const autoSendIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -26,8 +24,6 @@ export default function GeminiChat() {
     connectionStatus,
     connect,
     disconnect,
-    toggleRecording,
-    toggleWebcam,
     initializeMediaHandler,
   } = useGeminiConnection();
 
@@ -62,10 +58,8 @@ export default function GeminiChat() {
   }, []);
 
   // Handler functions
-  const handleConnect = () => connect(addMessage);
+  const handleConnect = () => connect(addMessage, videoRef);
   const handleDisconnect = () => disconnect(addMessage);
-  const handleToggleRecording = () => toggleRecording(addMessage);
-  const handleToggleWebcam = () => toggleWebcam(videoRef, addMessage);
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
@@ -77,8 +71,6 @@ export default function GeminiChat() {
         connectionStatus={connectionStatus}
         onConnect={handleConnect}
         onDisconnect={handleDisconnect}
-        onToggleRecording={handleToggleRecording}
-        onToggleWebcam={handleToggleWebcam}
       />
 
       {/* Video Preview */}
@@ -89,7 +81,7 @@ export default function GeminiChat() {
       />
 
       {/* Messages Panel */}
-      <MessagesPanel messages={messages} />
+      {/* <MessagesPanel messages={messages} /> */}
     </div>
   );
 }
