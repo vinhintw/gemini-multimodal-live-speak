@@ -31,9 +31,7 @@ export const useGeminiConnection = () => {
       try {
         audioContextRef.current = new AudioContext({ sampleRate: 24000 });
         await audioContextRef.current.resume();
-        console.log("Audio context state:", audioContextRef.current.state);
         setInitialized(true);
-        console.log("Audio initialization complete");
       } catch (error) {
         console.error("Failed to initialize audio:", error);
         throw error;
@@ -102,6 +100,17 @@ export const useGeminiConnection = () => {
             functionName: call.name,
             functionParams: call.args,
           });
+          if (window.ReactNativeWebView) {
+            const message = {
+              type: "WALKING_FUNCTION_CALL",
+              data: {
+                name: call.name,
+                args: call.args,
+                id: call.id,
+              },
+            };
+            window.ReactNativeWebView.postMessage(JSON.stringify(message));
+          }
 
           if (call.name === "send_obstacle_alert") {
             sendObstacleAlert(call.args);
@@ -148,7 +157,8 @@ export const useGeminiConnection = () => {
 
   const connect = useCallback(
     async (
-      addMessage: (message: Omit<Message, "id" | "timestamp">) => void
+      addMessage: (message: Omit<Message, "id" | "timestamp">) => void,
+      videoRef: React.RefObject<HTMLVideoElement>
     ) => {
       if (!GEMINI_API_KEY) {
         addMessage({
@@ -175,6 +185,103 @@ export const useGeminiConnection = () => {
         });
 
         api.sendSetupMessage(setupMessage);
+
+        // Automatically start recording
+        if (!isRecording) {
+          try {
+            await ensureAudioInitialized();
+            audioRecorderRef.current = new AudioRecorder();
+            await audioRecorderRef.current.start();
+
+            audioRecorderRef.current.on("data", (base64Data: string) => {
+              if (geminiAPIRef.current) {
+                geminiAPIRef.current.sendAudioChunk(base64Data);
+              } else {
+                console.error("❌ No Gemini API available to send audio!");
+              }
+            });
+
+            setIsRecording(true);
+            addMessage({
+              type: "user",
+              content: "Recording started...",
+            });
+          } catch (error) {
+            addMessage({
+              type: "error",
+              content: `Recording failed: ${(error as Error).message}`,
+            });
+          }
+        }
+
+        // Automatically start webcam
+        if (!isWebcamActive) {
+          if (!mediaHandlerRef.current) {
+            if (videoRef.current) {
+              try {
+                const handler = new MediaHandler();
+                handler.initialize(videoRef.current);
+                mediaHandlerRef.current = handler;
+              } catch (error) {
+                console.error("Failed to re-initialize MediaHandler:", error);
+                addMessage({
+                  type: "error",
+                  content: "Failed to initialize media handler",
+                });
+                return;
+              }
+            } else {
+              addMessage({
+                type: "error",
+                content: "Video element not ready. Please try again.",
+              });
+              return;
+            }
+          }
+
+          try {
+            addMessage({
+              type: "user",
+              content: "Starting webcam...",
+            });
+
+            const success = await mediaHandlerRef.current.startWebcam();
+            if (success) {
+              setIsWebcamActive(true);
+              addMessage({
+                type: "user",
+                content: "Webcam started successfully",
+              });
+
+              mediaHandlerRef.current.startFrameCapture((base64Image) => {
+                if (geminiAPIRef.current?.ws.readyState === WebSocket.OPEN) {
+                  const message = {
+                    realtimeInput: {
+                      mediaChunks: [
+                        {
+                          mime_type: "image/jpeg",
+                          data: base64Image,
+                        },
+                      ],
+                    },
+                  };
+                  geminiAPIRef.current.ws.send(JSON.stringify(message));
+                }
+              });
+            } else {
+              addMessage({
+                type: "error",
+                content:
+                  "Failed to start webcam. Please check permissions and try again.",
+              });
+            }
+          } catch (error) {
+            addMessage({
+              type: "error",
+              content: `Webcam error: ${(error as Error).message}`,
+            });
+          }
+        }
       } catch (error) {
         setConnectionStatus("disconnected");
         addMessage({
@@ -183,7 +290,7 @@ export const useGeminiConnection = () => {
         });
       }
     },
-    [ensureAudioInitialized, setupGeminiHandlers]
+    [ensureAudioInitialized, setupGeminiHandlers, isRecording, isWebcamActive]
   );
 
   const disconnect = useCallback(
@@ -393,3 +500,12 @@ export const useGeminiConnection = () => {
     initializeMediaHandler,
   };
 };
+
+declare global {
+  interface Window {
+    ReactNativeWebView?: {
+      postMessage: (message: string) => void;
+    };
+    toggleCall?: () => Promise<void>;
+  }
+}
