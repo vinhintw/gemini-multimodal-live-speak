@@ -12,7 +12,7 @@ export class MediaHandler {
 
   async startWebcam(): Promise<boolean> {
     try {
-      console.log("Requesting webcam access...");
+      // console.log("Requesting webcam access...");
 
       // Check if getUserMedia is supported
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -28,7 +28,7 @@ export class MediaHandler {
         audio: false, // Only video for webcam
       });
 
-      console.log("Webcam stream obtained:", this.webcamStream);
+      // console.log("Webcam stream obtained:", this.webcamStream);
 
       if (this.videoElement) {
         this.videoElement.srcObject = this.webcamStream;
@@ -38,7 +38,7 @@ export class MediaHandler {
         await new Promise<void>((resolve, reject) => {
           if (this.videoElement) {
             this.videoElement.onloadedmetadata = () => {
-              console.log("Video metadata loaded");
+              // console.log("Video metadata loaded");
               resolve();
             };
             this.videoElement.onerror = (e) => {
@@ -52,7 +52,7 @@ export class MediaHandler {
       }
 
       this.isWebcamActive = true;
-      console.log("Webcam started successfully");
+      // console.log("Webcam started successfully");
       return true;
     } catch (error) {
       console.error("Error starting webcam:", error);

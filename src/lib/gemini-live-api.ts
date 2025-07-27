@@ -72,7 +72,7 @@ export class GeminiLiveAPI {
       if (this.autoSetup) {
         this.sendDefaultSetup();
       } else if (this.pendingSetupMessage) {
-        console.log("Sending pending setup message:", this.pendingSetupMessage);
+        // console.log("Sending pending setup message:", this.pendingSetupMessage);
         this.ws.send(JSON.stringify(this.pendingSetupMessage));
         this.pendingSetupMessage = null;
       }
@@ -91,7 +91,7 @@ export class GeminiLiveAPI {
         if (wsResponse.setupComplete) {
           this.onSetupComplete();
         } else if (wsResponse.toolCall) {
-          console.log("🔧 Tool call received:", wsResponse.toolCall);
+          // console.log("🔧 Tool call received:", wsResponse.toolCall);
           this.onToolCall(wsResponse.toolCall);
         } else if (wsResponse.serverContent) {
           if (wsResponse.serverContent.interrupted) {
@@ -122,7 +122,7 @@ export class GeminiLiveAPI {
               } else if (part.text) {
                 console.log("📝 Text part:", part.text);
               } else {
-                console.log("❓ Unknown part type:", part);
+                // console.log("❓ Unknown part type:", part);
               }
             }
           } else {
@@ -146,14 +146,14 @@ export class GeminiLiveAPI {
     };
 
     this.ws.onclose = (event) => {
-      console.log("WebSocket connection closed:", event.code, event.reason);
+      // console.log("WebSocket connection closed:", event.code, event.reason);
       this.onClose(event);
     };
   }
 
   public sendSetupMessage(setupMessage: any): void {
     if (this.ws.readyState === WebSocket.OPEN) {
-      console.log("Sending setup message:", setupMessage);
+      // console.log("Sending setup message:", setupMessage);
       this.ws.send(JSON.stringify(setupMessage));
     } else {
       console.log("WebSocket not ready, storing setup message");
@@ -211,7 +211,7 @@ export class GeminiLiveAPI {
           functionResponses: functionResponses,
         },
       };
-      console.log("Sending tool response:", message);
+      // console.log("Sending tool response:", message);
       this.ws.send(JSON.stringify(message));
     }
   }
@@ -345,7 +345,7 @@ export class GeminiLiveAPI {
       this.audioContext = null;
     }
 
-    console.log("🎵 Audio playback stopped and cleaned up");
+    // console.log("🎵 Audio playback stopped and cleaned up");
   }
 
   // Stop only current audio but keep context for future playback
