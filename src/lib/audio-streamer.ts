@@ -54,13 +54,6 @@ export class AudioStreamer {
       this.sampleRate
     );
     audioBuffer.getChannelData(0).set(float32Array);
-
-    console.log(
-      "Created audio buffer, duration:",
-      audioBuffer.duration,
-      "seconds"
-    );
-
     // Add to queue
     this.audioQueue.push(audioBuffer);
     // console.log("Audio queue length after push:", this.audioQueue.length);
@@ -174,7 +167,6 @@ export class AudioStreamer {
 
     // Clear the queue
     this.audioQueue = [];
-    console.log("🗑️ Audio queue cleared");
 
     // Gradual volume fade to prevent clicks
     this.gainNode.gain.linearRampToValueAtTime(
@@ -203,18 +195,12 @@ export class AudioStreamer {
     this.gainNode.gain.setValueAtTime(1, this.context.currentTime);
 
     if (this.audioQueue.length > 0 && !this.isPlaying) {
-      console.log(
-        "Resuming playback with",
-        this.audioQueue.length,
-        "buffers in queue"
-      );
       this.isPlaying = true;
       this.playNextBuffer();
     }
   }
 
   complete(): void {
-    console.log("Audio streaming complete");
     if (this.audioQueue.length > 0) {
       // Let the remaining buffers play out
       return;

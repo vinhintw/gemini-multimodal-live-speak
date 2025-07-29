@@ -136,6 +136,67 @@ export class MediaHandler {
     }, 1000); // Capture every second
   }
 
+  async captureCurrentFrame(): Promise<string | null> {
+    return new Promise((resolve) => {
+      if (
+        !this.videoElement ||
+        (!this.isWebcamActive && !this.isScreenActive)
+      ) {
+        resolve(null);
+        return;
+      }
+
+      if (
+        this.videoElement.videoWidth === 0 ||
+        this.videoElement.videoHeight === 0
+      ) {
+        resolve(null);
+        return;
+      }
+
+      try {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+
+        canvas.width = this.videoElement.videoWidth;
+        canvas.height = this.videoElement.videoHeight;
+
+        ctx.drawImage(this.videoElement, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const result = reader.result as string;
+                const base64 = result.split(",")[1];
+                resolve(base64);
+              };
+              reader.onerror = () => {
+                console.error("Error reading blob");
+                resolve(null);
+              };
+              reader.readAsDataURL(blob);
+            } else {
+              console.error("Failed to create blob from canvas");
+              resolve(null);
+            }
+          },
+          "image/jpeg",
+          0.8
+        );
+      } catch (error) {
+        console.error("Error capturing frame:", error);
+        resolve(null);
+      }
+    });
+  }
+
   stopAll(): void {
     if (this.frameInterval) {
       clearInterval(this.frameInterval);

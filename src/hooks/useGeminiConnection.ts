@@ -27,7 +27,6 @@ export const useGeminiConnection = () => {
 
   const ensureAudioInitialized = useCallback(async () => {
     if (!initialized) {
-      console.log("Initializing audio context...");
       try {
         audioContextRef.current = new AudioContext({ sampleRate: 24000 });
         await audioContextRef.current.resume();
@@ -58,7 +57,6 @@ export const useGeminiConnection = () => {
       api.onInterrupted = () => {
         if (geminiAPIRef.current) {
           geminiAPIRef.current.stopCurrentAudio();
-          console.log("🔇 Audio stopped due to interruption");
         }
         addMessage({
           type: "assistant",
@@ -67,10 +65,10 @@ export const useGeminiConnection = () => {
       };
 
       api.onTurnComplete = () => {
-        addMessage({
-          type: "assistant",
-          content: "Finished speaking",
-        });
+        // addMessage({
+        //   type: "assistant",
+        //   content: "Finished speaking",
+        // });
       };
 
       api.onError = (message: string) => {
@@ -377,18 +375,12 @@ export const useGeminiConnection = () => {
       videoRef: React.RefObject<HTMLVideoElement>,
       addMessage: (message: Omit<Message, "id" | "timestamp">) => void
     ) => {
-      console.log(
-        "toggleWebcam called, mediaHandlerRef:",
-        mediaHandlerRef.current
-      );
-
       if (!mediaHandlerRef.current) {
         if (videoRef.current) {
           try {
             const handler = new MediaHandler();
             handler.initialize(videoRef.current);
             mediaHandlerRef.current = handler;
-            console.log("MediaHandler re-initialized");
           } catch (error) {
             console.error("Failed to re-initialize MediaHandler:", error);
             addMessage({
@@ -476,13 +468,42 @@ export const useGeminiConnection = () => {
           const handler = new MediaHandler();
           handler.initialize(videoRef.current);
           mediaHandlerRef.current = handler;
-          console.log("MediaHandler initialized successfully");
         } catch (error) {
           console.error("Failed to initialize MediaHandler:", error);
         }
       }
     },
     []
+  );
+
+  const sendTextWithImage = useCallback(
+    async (text: string) => {
+      if (!geminiAPIRef.current || !isConnected) {
+        console.error("❌ Gemini API not connected, cannot send message");
+        return false;
+      }
+
+      try {
+        let base64Image = null;
+
+        // Capture image from webcam if active
+        if (isWebcamActive && mediaHandlerRef.current) {
+          base64Image = await mediaHandlerRef.current.captureCurrentFrame();
+        }
+
+        if (base64Image) {
+          geminiAPIRef.current.sendTextWithImage(text, base64Image);
+          return true;
+        } else {
+          geminiAPIRef.current.sendTextMessage(text);
+          return true;
+        }
+      } catch (error) {
+        console.error("❌ Error sending text with image:", error);
+        return false;
+      }
+    },
+    [isConnected, isWebcamActive]
   );
 
   return {
@@ -498,6 +519,7 @@ export const useGeminiConnection = () => {
     toggleRecording,
     toggleWebcam,
     initializeMediaHandler,
+    sendTextWithImage,
   };
 };
 

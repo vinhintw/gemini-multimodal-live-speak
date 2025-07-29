@@ -126,10 +126,10 @@ export class GeminiLiveAPI {
               }
             }
           } else {
-            console.log(
-              "❌ Server content without modelTurn.parts:",
-              wsResponse.serverContent
-            );
+            // console.log(
+            //   "❌ Server content without modelTurn.parts:",
+            //   wsResponse.serverContent
+            // );
           }
         } else {
           console.log("❓ Unknown message type:", wsResponse);
@@ -399,11 +399,40 @@ export class GeminiLiveAPI {
         },
       };
 
-      console.log("Sending content message:", contentMessage);
+      // console.log("Sending content message:", contentMessage);
       this.ws.send(JSON.stringify(contentMessage));
     } else {
       console.error(
         "❌ WebSocket not open, cannot send text message. State:",
+        this.ws.readyState
+      );
+    }
+  }
+  public sendTextWithImage(text: string, base64Image: string): void {
+    if (this.ws.readyState === WebSocket.OPEN) {
+      const contentMessage = {
+        client_content: {
+          turns: [
+            {
+              role: "user",
+              parts: [
+                { text: text },
+                {
+                  inline_data: {
+                    mime_type: "image/jpeg",
+                    data: base64Image,
+                  },
+                },
+              ],
+            },
+          ],
+          turn_complete: true,
+        },
+      };
+      this.ws.send(JSON.stringify(contentMessage));
+    } else {
+      console.error(
+        "❌ WebSocket not open, cannot send text with image. State:",
         this.ws.readyState
       );
     }
