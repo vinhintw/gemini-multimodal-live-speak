@@ -6,6 +6,7 @@ import { useMessages } from "@/hooks/useMessages";
 import { useCameraPermissions } from "@/hooks/useCameraPermissions";
 import { ConnectionHeader } from "@/components/ConnectionHeader";
 import { VideoPreview } from "@/components/VideoPreview";
+import { MessagesPanel } from "./MessagesPanel";
 
 export default function GeminiChat() {
   const videoRef = useRef<HTMLVideoElement>(
@@ -25,6 +26,7 @@ export default function GeminiChat() {
     connect,
     disconnect,
     initializeMediaHandler,
+    sendTextWithImage,
   } = useGeminiConnection();
 
   // Initialize media handler and check permissions
@@ -57,9 +59,39 @@ export default function GeminiChat() {
     };
   }, []);
 
-  // Handler functions
   const handleConnect = () => connect(addMessage, videoRef);
   const handleDisconnect = () => disconnect(addMessage);
+
+  const sendTextWithImageOnce = async () => {
+    if (!isConnected) {
+      addMessage({
+        type: "error",
+        content: "Please connect to Gemini API first",
+      });
+      return;
+    }
+    if (!isWebcamActive) {
+      addMessage({
+        type: "error",
+        content: "Please start webcam first to capture image",
+      });
+      return;
+    }
+    const hardcodedText = "方向指引或者障礙物偵測";
+    await sendTextWithImage(hardcodedText);
+  };
+
+  const handleToggleAutoSend = () => {
+    if (isAutoSending) {
+      stopAutoSend();
+    } else {
+      setIsAutoSending(true);
+      sendTextWithImageOnce();
+      autoSendIntervalRef.current = setInterval(() => {
+        sendTextWithImageOnce();
+      }, 10000);
+    }
+  };
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
@@ -73,6 +105,22 @@ export default function GeminiChat() {
         onDisconnect={handleDisconnect}
       />
 
+      {/* Send Text Message Buttons */}
+      <div className="mt-4 flex justify-center gap-4">
+        <button
+          onClick={handleToggleAutoSend}
+          disabled={!isConnected || !isWebcamActive}
+          className={`px-6 py-3 rounded-lg font-semibold text-white transition-colors ${
+            isConnected && isWebcamActive
+              ? isAutoSending
+                ? "bg-red-600 hover:bg-red-700 active:bg-red-800"
+                : "bg-green-600 hover:bg-green-700 active:bg-green-800"
+              : "bg-gray-400 cursor-not-allowed"
+          }`}
+        >
+          {isAutoSending ? "⏹ 停止自動偵測" : "▶️ 開始自動偵測"}
+        </button>
+      </div>
       {/* Video Preview */}
       <VideoPreview
         ref={videoRef}
@@ -81,7 +129,7 @@ export default function GeminiChat() {
       />
 
       {/* Messages Panel */}
-      {/* <MessagesPanel messages={messages} /> */}
+      <MessagesPanel messages={messages} />
     </div>
   );
 }

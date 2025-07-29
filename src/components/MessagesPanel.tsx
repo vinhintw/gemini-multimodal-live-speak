@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Message } from "@/lib/setup-model";
@@ -12,15 +12,8 @@ interface MessagesPanelProps {
 export const MessagesPanel: React.FC<MessagesPanelProps> = ({ messages }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Conversation</CardTitle>
-      </CardHeader>
       <CardContent>
         <ScrollArea className="h-96 w-full pr-4">
           <div className="space-y-4">
