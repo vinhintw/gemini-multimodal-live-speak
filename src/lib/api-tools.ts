@@ -15,7 +15,7 @@ interface NavigationGuidance {
 // Mock API Functions for Walking Assistant
 // gửi cảnh báo chướng ngại vật
 export function sendObstacleAlert(params: ObstacleAlert): void {
-  // console.log("🚨 OBSTACLE ALERT:");
+  console.log("🚨 OBSTACLE ALERT:");
   // console.log(`Type: ${params.type}`);
   // console.log(`Severity: ${params.severity}`);
   // console.log(`Distance: ${params.distance} meters`);
@@ -27,7 +27,7 @@ export function sendObstacleAlert(params: ObstacleAlert): void {
 
 // dẫn đường
 export function sendNavigationGuidance(params: NavigationGuidance): void {
-  // console.log("🧭 NAVIGATION GUIDANCE:");
+  console.log("🧭 NAVIGATION GUIDANCE:");
   // console.log(`Instruction: ${params.instruction}`);
   // console.log(`Direction: ${params.direction}`);
   // console.log("-------------------");
